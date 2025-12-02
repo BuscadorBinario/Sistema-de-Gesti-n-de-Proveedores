@@ -113,6 +113,14 @@
             padding: 30px;
         }
 
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
         /* TOPBAR */
         .topbar {
             background: white;
@@ -360,6 +368,12 @@
             color: #64748b;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        th:hover {
+            background: #e2e8f0;
         }
 
         td {
@@ -719,6 +733,10 @@
             animation: fadeIn 0.3s ease;
         }
 
+        .modal.show {
+            display: block;
+        }
+
         .modal-content {
             background: white;
             margin: 3% auto;
@@ -955,10 +973,14 @@
 
         /* FILTERS */
         .filters-panel {
-            display: flex;
+            display: none;
             gap: 15px;
             margin-bottom: 20px;
             flex-wrap: wrap;
+        }
+
+        .filters-panel.show {
+            display: flex;
         }
 
         .filter-group {
@@ -1005,6 +1027,7 @@
             .sidebar {
                 width: 0;
                 padding: 0;
+                overflow: hidden;
             }
 
             .main-content {
@@ -1018,6 +1041,11 @@
             .topbar {
                 flex-direction: column;
                 gap: 15px;
+                align-items: stretch;
+            }
+
+            .topbar-right {
+                flex-direction: column;
             }
 
             .search-box input {
@@ -1043,31 +1071,31 @@
             </div>
         </div>
         <nav class="sidebar-nav">
-            <div class="nav-item active" onclick="showSection('dashboard')">
+            <div class="nav-item active" data-section="dashboard">
                 <span class="nav-icon">📊</span>
                 <span>Dashboard</span>
             </div>
-            <div class="nav-item" onclick="showSection('suppliers')">
+            <div class="nav-item" data-section="suppliers">
                 <span class="nav-icon">📋</span>
                 <span>Proveedores</span>
             </div>
-            <div class="nav-item" onclick="showSection('analytics')">
+            <div class="nav-item" data-section="analytics">
                 <span class="nav-icon">📈</span>
                 <span>Análisis</span>
             </div>
-            <div class="nav-item" onclick="showSection('reports')">
+            <div class="nav-item" data-section="reports">
                 <span class="nav-icon">📄</span>
                 <span>Reportes</span>
             </div>
-            <div class="nav-item" onclick="exportToCSV()">
+            <div class="nav-item" id="exportCSV">
                 <span class="nav-icon">📥</span>
                 <span>Exportar CSV</span>
             </div>
-            <div class="nav-item" onclick="exportToJSON()">
+            <div class="nav-item" id="exportJSON">
                 <span class="nav-icon">📦</span>
                 <span>Exportar JSON</span>
             </div>
-            <div class="nav-item" onclick="clearAllData()">
+            <div class="nav-item" id="clearData">
                 <span class="nav-icon">🗑️</span>
                 <span>Limpiar Datos</span>
             </div>
@@ -1076,154 +1104,266 @@
 
     <!-- MAIN CONTENT -->
     <div class="main-content">
-        <!-- TOPBAR -->
-        <div class="topbar">
-            <div class="topbar-left">
-                <h1>Panel de Control</h1>
-                <p>Gestión completa de proveedores</p>
-            </div>
-            <div class="topbar-right">
-                <div class="search-box">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" id="globalSearch" placeholder="Buscar proveedores...">
+        <!-- SECTION: DASHBOARD -->
+        <div class="content-section active" id="dashboard-section">
+            <!-- TOPBAR -->
+            <div class="topbar">
+                <div class="topbar-left">
+                    <h1>Panel de Control</h1>
+                    <p>Gestión completa de proveedores</p>
                 </div>
-                <button class="btn-action btn-primary" onclick="openAddModal()">
-                    <span>➕</span>
-                    <span>Nuevo Proveedor</span>
-                </button>
+                <div class="topbar-right">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="globalSearch" placeholder="Buscar proveedores...">
+                    </div>
+                    <button class="btn-action btn-primary" id="openAddModal">
+                        <span>➕</span>
+                        <span>Nuevo Proveedor</span>
+                    </button>
+                </div>
             </div>
-        </div>
 
-        <!-- STATS CARDS -->
-        <div class="dashboard-grid">
-            <div class="stat-card">
-                <div class="stat-header">
-                    <div>
-                        <div class="stat-label">Total Proveedores</div>
-                        <div class="stat-value" id="totalSuppliers">0</div>
-                        <div class="stat-trend up">
-                            <span>↑</span>
-                            <span id="totalTrend">0%</span>
+            <!-- STATS CARDS -->
+            <div class="dashboard-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Total Proveedores</div>
+                            <div class="stat-value" id="totalSuppliers">0</div>
+                            <div class="stat-trend up">
+                                <span>↑</span>
+                                <span id="totalTrend">0%</span>
+                            </div>
+                        </div>
+                        <div class="stat-icon">📦</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Activos</div>
+                            <div class="stat-value" id="activeSuppliers">0</div>
+                            <div class="stat-trend up">
+                                <span>↑</span>
+                                <span id="activeTrend">0%</span>
+                            </div>
+                        </div>
+                        <div class="stat-icon">✅</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Calificación Promedio</div>
+                            <div class="stat-value" id="avgRating">0.0</div>
+                            <div class="stat-trend up">
+                                <span>⭐</span>
+                                <span>Excelente</span>
+                            </div>
+                        </div>
+                        <div class="stat-icon">⭐</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Pendientes</div>
+                            <div class="stat-value" id="pendingSuppliers">0</div>
+                            <div class="stat-trend down">
+                                <span>⏳</span>
+                                <span>Revisar</span>
+                            </div>
+                        </div>
+                        <div class="stat-icon">⏳</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANELS GRID -->
+            <div class="panels-grid">
+                <!-- TABLE PANEL -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">
+                            <span>📋</span>
+                            <span>Lista de Proveedores</span>
+                        </h2>
+                        <div class="panel-actions">
+                            <button class="btn-icon" id="refreshData" title="Actualizar">
+                                🔄
+                            </button>
+                            <button class="btn-icon" id="toggleFilters" title="Filtros">
+                                🔍
+                            </button>
                         </div>
                     </div>
-                    <div class="stat-icon">📦</div>
-                </div>
-            </div>
 
-            <div class="stat-card">
-                <div class="stat-header">
-                    <div>
-                        <div class="stat-label">Activos</div>
-                        <div class="stat-value" id="activeSuppliers">0</div>
-                        <div class="stat-trend up">
-                            <span>↑</span>
-                            <span id="activeTrend">0%</span>
+                    <div class="filters-panel" id="filtersPanel">
+                        <div class="filter-group">
+                            <select class="form-select" id="filterCategory">
+                                <option value="">📂 Todas las categorías</option>
+                                <option value="Materias Primas">Materias Primas</option>
+                                <option value="Tecnología">Tecnología</option>
+                                <option value="Servicios">Servicios</option>
+                                <option value="Equipamiento">Equipamiento</option>
+                                <option value="Logística">Logística</option>
+                                <option value="Alimentos">Alimentos</option>
+                                <option value="Construcción">Construcción</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <select class="form-select" id="filterStatus">
+                                <option value="">🔄 Todos los estados</option>
+                                <option value="activo">✅ Activo</option>
+                                <option value="inactivo">❌ Inactivo</option>
+                                <option value="pendiente">⏳ Pendiente</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <select class="form-select" id="filterRating">
+                                <option value="">⭐ Todas las calificaciones</option>
+                                <option value="5">⭐⭐⭐⭐⭐ (5 estrellas)</option>
+                                <option value="4">⭐⭐⭐⭐ (4 estrellas)</option>
+                                <option value="3">⭐⭐⭐ (3 estrellas)</option>
+                                <option value="2">⭐⭐ (2 estrellas)</option>
+                                <option value="1">⭐ (1 estrella)</option>
+                            </select>
                         </div>
                     </div>
-                    <div class="stat-icon">✅</div>
-                </div>
-            </div>
 
-            <div class="stat-card">
-                <div class="stat-header">
-                    <div>
-                        <div class="stat-label">Calificación Promedio</div>
-                        <div class="stat-value" id="avgRating">0.0</div>
-                        <div class="stat-trend up">
-                            <span>⭐</span>
-                            <span>Excelente</span>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th data-sort="name">Proveedor ↕</th>
+                                    <th data-sort="category">Categoría ↕</th>
+                                    <th data-sort="contact">Contacto ↕</th>
+                                    <th data-sort="status">Estado ↕</th>
+                                    <th data-sort="rating">Calificación ↕</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="supplierTableBody">
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="empty-state">
+                                            <div class="empty-icon">📦</div>
+                                            <div class="empty-title">No hay proveedores registrados</div>
+                                            <div class="empty-text">Comienza agregando tu primer proveedor</div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ACTIVITY PANEL -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">
+                            <span>📈</span>
+                            <span>Actividad Reciente</span>
+                        </h2>
+                    </div>
+                    <div class="activity-feed" id="activityFeed">
+                        <div class="empty-state">
+                            <div class="empty-icon">📊</div>
+                            <div class="empty-title">Sin actividad</div>
+                            <div class="empty-text">Las acciones se mostrarán aquí</div>
                         </div>
                     </div>
-                    <div class="stat-icon">⭐</div>
                 </div>
             </div>
 
-            <div class="stat-card">
-                <div class="stat-header">
-                    <div>
-                        <div class="stat-label">Pendientes</div>
-                        <div class="stat-value" id="pendingSuppliers">0</div>
-                        <div class="stat-trend down">
-                            <span>⏳</span>
-                            <span>Revisar</span>
+            <!-- CHARTS GRID -->
+            <div class="panels-grid">
+                <!-- CATEGORY CHART -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">
+                            <span>📊</span>
+                            <span>Proveedores por Categoría</span>
+                        </h2>
+                    </div>
+                    <div class="chart-container">
+                        <div class="bar-chart" id="categoryChart">
+                            <div class="empty-state">
+                                <div class="empty-icon">📊</div>
+                                <div class="empty-text">No hay datos para mostrar</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="stat-icon">⏳</div>
+                </div>
+
+                <!-- STATUS CHART -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">
+                            <span>🔄</span>
+                            <span>Estado de Proveedores</span>
+                        </h2>
+                    </div>
+                    <div class="chart-container">
+                        <div class="pie-chart">
+                            <canvas id="statusPieChart" class="pie-canvas"></canvas>
+                            <div class="pie-legend" id="statusLegend"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- PANELS GRID -->
-        <div class="panels-grid">
-            <!-- TABLE PANEL -->
+            <!-- TOP SUPPLIERS PANEL -->
             <div class="panel">
                 <div class="panel-header">
                     <h2 class="panel-title">
-                        <span>📋</span>
-                        <span>Lista de Proveedores</span>
+                        <span>🏆</span>
+                        <span>Top 5 Mejores Proveedores</span>
                     </h2>
-                    <div class="panel-actions">
-                        <button class="btn-icon" onclick="refreshData()" title="Actualizar">
-                            🔄
-                        </button>
-                        <button class="btn-icon" onclick="toggleFilters()" title="Filtros">
-                            🔍
-                        </button>
+                </div>
+                <div class="top-suppliers" id="topSuppliers">
+                    <div class="empty-state">
+                        <div class="empty-icon">🏆</div>
+                        <div class="empty-text">No hay proveedores calificados</div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="filters-panel" id="filtersPanel" style="display: none;">
-                    <div class="filter-group">
-                        <select class="form-select" id="filterCategory" onchange="renderSuppliers()">
-                            <option value="">📂 Todas las categorías</option>
-                            <option value="Materias Primas">Materias Primas</option>
-                            <option value="Tecnología">Tecnología</option>
-                            <option value="Servicios">Servicios</option>
-                            <option value="Equipamiento">Equipamiento</option>
-                            <option value="Logística">Logística</option>
-                            <option value="Alimentos">Alimentos</option>
-                            <option value="Construcción">Construcción</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <select class="form-select" id="filterStatus" onchange="renderSuppliers()">
-                            <option value="">🔄 Todos los estados</option>
-                            <option value="activo">✅ Activo</option>
-                            <option value="inactivo">❌ Inactivo</option>
-                            <option value="pendiente">⏳ Pendiente</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <select class="form-select" id="filterRating" onchange="renderSuppliers()">
-                            <option value="">⭐ Todas las calificaciones</option>
-                            <option value="5">⭐⭐⭐⭐⭐ (5 estrellas)</option>
-                            <option value="4">⭐⭐⭐⭐ (4 estrellas)</option>
-                            <option value="3">⭐⭐⭐ (3 estrellas)</option>
-                            <option value="2">⭐⭐ (2 estrellas)</option>
-                            <option value="1">⭐ (1 estrella)</option>
-                        </select>
-                    </div>
+        <!-- SECTION: SUPPLIERS -->
+        <div class="content-section" id="suppliers-section">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <h1>📋 Gestión de Proveedores</h1>
+                    <p>Administra todos tus proveedores desde aquí</p>
                 </div>
-
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Listado Completo de Proveedores</h2>
+                </div>
                 <div class="table-container">
                     <table>
                         <thead>
                             <tr>
-                                <th onclick="sortTable('name')">Proveedor ↕</th>
-                                <th onclick="sortTable('category')">Categoría ↕</th>
-                                <th onclick="sortTable('contact')">Contacto ↕</th>
-                                <th onclick="sortTable('status')">Estado ↕</th>
-                                <th onclick="sortTable('rating')">Calificación ↕</th>
+                                <th>Proveedor</th>
+                                <th>Categoría</th>
+                                <th>Contacto</th>
+                                <th>Estado</th>
+                                <th>Calificación</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="supplierTableBody">
+                        <tbody id="suppliersListBody">
                             <tr>
                                 <td colspan="6">
                                     <div class="empty-state">
                                         <div class="empty-icon">📦</div>
-                                        <div class="empty-title">No hay proveedores registrados</div>
-                                        <div class="empty-text">Comienza agregando tu primer proveedor</div>
+                                        <div class="empty-text">No hay proveedores</div>
                                     </div>
                                 </td>
                             </tr>
@@ -1231,74 +1371,254 @@
                     </table>
                 </div>
             </div>
+        </div>
 
-            <!-- ACTIVITY PANEL -->
-            <div class="panel">
-                <div class="panel-header">
-                    <h2 class="panel-title">
-                        <span>📈</span>
-                        <span>Actividad Reciente</span>
-                    </h2>
+        <!-- SECTION: ANALYTICS -->
+        <div class="content-section" id="analytics-section">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <h1>📈 Análisis y Métricas</h1>
+                    <p>Visualización avanzada de datos y tendencias</p>
                 </div>
-                <div class="activity-feed" id="activityFeed">
-                    <div class="empty-state">
-                        <div class="empty-icon">📊</div>
-                        <div class="empty-title">Sin actividad</div>
-                        <div class="empty-text">Las acciones se mostrarán aquí</div>
+            </div>
+
+            <!-- ANALYTICS STATS -->
+            <div class="dashboard-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Proveedores Premium</div>
+                            <div class="stat-value" id="premiumSuppliers">0</div>
+                            <div class="stat-trend up">
+                                <span>⭐</span>
+                                <span>5 estrellas</span>
+                            </div>
+                        </div>
+                        <div class="stat-icon">🏆</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Categoría Líder</div>
+                            <div class="stat-value" id="topCategory" style="font-size: 20px;">-</div>
+                            <div class="stat-trend up">
+                                <span>📊</span>
+                                <span id="topCategoryCount">0 proveedores</span>
+                            </div>
+                        </div>
+                        <div class="stat-icon">🥇</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Tasa de Actividad</div>
+                            <div class="stat-value" id="activityRate">0%</div>
+                            <div class="stat-trend up">
+                                <span>📈</span>
+                                <span>Desempeño</span>
+                            </div>
+                        </div>
+                        <div class="stat-icon">💹</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Nuevos Este Mes</div>
+                            <div class="stat-value" id="newThisMonth">0</div>
+                            <div class="stat-trend up">
+                                <span>🆕</span>
+                                <span>Últimos 30 días</span>
+                            </div>
+                        </div>
+                        <div class="stat-icon">📅</div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- CHARTS GRID -->
-        <div class="panels-grid">
-            <!-- CATEGORY CHART -->
-            <div class="panel">
-                <div class="panel-header">
-                    <h2 class="panel-title">
-                        <span>📊</span>
-                        <span>Proveedores por Categoría</span>
-                    </h2>
+            <!-- CHARTS ROW 1 -->
+            <div class="panels-grid">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">📊 Distribución por Categoría</h2>
+                    </div>
+                    <div class="chart-container">
+                        <div class="bar-chart" id="analyticsChart"></div>
+                    </div>
                 </div>
-                <div class="chart-container">
-                    <div class="bar-chart" id="categoryChart">
-                        <div class="empty-state">
-                            <div class="empty-icon">📊</div>
-                            <div class="empty-text">No hay datos para mostrar</div>
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">🔄 Estado de Proveedores</h2>
+                    </div>
+                    <div class="chart-container">
+                        <div class="pie-chart">
+                            <canvas id="analyticsStatusChart" class="pie-canvas"></canvas>
+                            <div class="pie-legend" id="analyticsStatusLegend"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- STATUS CHART -->
+            <!-- CHARTS ROW 2 -->
+            <div class="panels-grid">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">⭐ Distribución de Calificaciones</h2>
+                    </div>
+                    <div class="chart-container">
+                        <div class="bar-chart" id="ratingsChart"></div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">📅 Proveedores por Mes</h2>
+                    </div>
+                    <div class="chart-container">
+                        <div class="bar-chart" id="monthlyChart"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DETAILED TABLES -->
             <div class="panel">
                 <div class="panel-header">
-                    <h2 class="panel-title">
-                        <span>🔄</span>
-                        <span>Estado de Proveedores</span>
-                    </h2>
+                    <h2 class="panel-title">📋 Resumen por Categoría</h2>
                 </div>
-                <div class="chart-container">
-                    <div class="pie-chart">
-                        <canvas id="statusPieChart" class="pie-canvas"></canvas>
-                        <div class="pie-legend" id="statusLegend"></div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Categoría</th>
+                                <th>Total</th>
+                                <th>Activos</th>
+                                <th>Inactivos</th>
+                                <th>Pendientes</th>
+                                <th>Calificación Promedio</th>
+                                <th>Porcentaje</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categorySummaryTable"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PERFORMANCE METRICS -->
+            <div class="panels-grid">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">🎯 Métricas de Rendimiento</h2>
                     </div>
+                    <div style="padding: 20px;">
+                        <div style="margin-bottom: 25px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="font-weight: 600; color: var(--dark);">Tasa de Cumplimiento</span>
+                                <span style="font-weight: 700; color: var(--primary);" id="complianceRate">0%</span>
+                            </div>
+                            <div style="background: var(--light); height: 12px; border-radius: 10px; overflow: hidden;">
+                                <div id="complianceBar" style="background: linear-gradient(90deg, var(--primary), var(--secondary)); height: 100%; width: 0%; transition: width 1s ease;"></div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 25px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="font-weight: 600; color: var(--dark);">Proveedores de Calidad (4-5⭐)</span>
+                                <span style="font-weight: 700; color: var(--success);" id="qualityRate">0%</span>
+                            </div>
+                            <div style="background: var(--light); height: 12px; border-radius: 10px; overflow: hidden;">
+                                <div id="qualityBar" style="background: linear-gradient(90deg, var(--success), #059669); height: 100%; width: 0%; transition: width 1s ease;"></div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 25px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="font-weight: 600; color: var(--dark);">Diversificación de Categorías</span>
+                                <span style="font-weight: 700; color: var(--warning);" id="diversityRate">0%</span>
+                            </div>
+                            <div style="background: var(--light); height: 12px; border-radius: 10px; overflow: hidden;">
+                                <div id="diversityBar" style="background: linear-gradient(90deg, var(--warning), #d97706); height: 100%; width: 0%; transition: width 1s ease;"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="font-weight: 600; color: var(--dark);">Tasa de Retención</span>
+                                <span style="font-weight: 700; color: var(--info);" id="retentionRate">0%</span>
+                            </div>
+                            <div style="background: var(--light); height: 12px; border-radius: 10px; overflow: hidden;">
+                                <div id="retentionBar" style="background: linear-gradient(90deg, var(--info), #2563eb); height: 100%; width: 0%; transition: width 1s ease;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">📊 Insights Clave</h2>
+                    </div>
+                    <div id="insightsContainer" style="padding: 20px;">
+                        <div class="empty-state">
+                            <div class="empty-icon">💡</div>
+                            <div class="empty-text">Agrega proveedores para ver insights</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COMPARISON TABLE -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">🔍 Análisis Comparativo</h2>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Métrica</th>
+                                <th>Valor Actual</th>
+                                <th>Objetivo</th>
+                                <th>Estado</th>
+                                <th>Progreso</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparisonTable"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
-        <!-- TOP SUPPLIERS PANEL -->
-        <div class="panel">
-            <div class="panel-header">
-                <h2 class="panel-title">
-                    <span>🏆</span>
-                    <span>Top 5 Mejores Proveedores</span>
-                </h2>
+        <!-- SECTION: REPORTS -->
+        <div class="content-section" id="reports-section">
+            <div class="topbar">
+                <div class="topbar-left">
+                    <h1>📄 Reportes</h1>
+                    <p>Genera reportes personalizados</p>
+                </div>
             </div>
-            <div class="top-suppliers" id="topSuppliers">
-                <div class="empty-state">
-                    <div class="empty-icon">🏆</div>
-                    <div class="empty-text">No hay proveedores calificados</div>
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Opciones de Reporte</h2>
+                </div>
+                <div style="padding: 40px; text-align: center;">
+                    <div class="empty-icon">📊</div>
+                    <h3 style="margin: 20px 0;">Generador de Reportes</h3>
+                    <p style="color: #64748b; margin-bottom: 30px;">
+                        Exporta tus datos en diferentes formatos
+                    </p>
+                    <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+                        <button class="btn-action btn-primary" id="reportExportCSV">
+                            <span>📥</span>
+                            <span>Exportar CSV</span>
+                        </button>
+                        <button class="btn-action btn-primary" id="reportExportJSON">
+                            <span>📦</span>
+                            <span>Exportar JSON</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1306,7 +1626,7 @@
 
     <!-- FLOATING ACTION BUTTON -->
     <div class="floating-action">
-        <button class="fab" id="fabButton" onclick="toggleAutoGenerate()" title="Auto-generar proveedores">
+        <button class="fab" id="fabButton" title="Auto-generar proveedores">
             ▶️
         </button>
     </div>
@@ -1316,9 +1636,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modalTitle">➕ Agregar Nuevo Proveedor</h2>
-                <button class="modal-close" onclick="closeModal()">&times;</button>
+                <button class="modal-close" id="closeModal">&times;</button>
             </div>
-            <form id="supplierForm" onsubmit="saveSupplier(event)">
+            <form id="supplierForm">
                 <div class="modal-body">
                     <input type="hidden" id="supplierId">
                     
@@ -1383,7 +1703,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn-action btn-secondary" onclick="closeModal()">
+                    <button type="button" class="btn-action btn-secondary" id="cancelModal">
                         Cancelar
                     </button>
                     <button type="submit" class="btn-action btn-primary">
@@ -1400,11 +1720,11 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>📋 Detalles del Proveedor</h2>
-                <button class="modal-close" onclick="closeDetailModal()">&times;</button>
+                <button class="modal-close" id="closeDetailModal">&times;</button>
             </div>
             <div class="modal-body" id="detailModalBody"></div>
             <div class="modal-footer">
-                <button class="btn-action btn-secondary" onclick="closeDetailModal()">
+                <button class="btn-action btn-secondary" id="closeDetailBtn">
                     Cerrar
                 </button>
             </div>
@@ -1412,6 +1732,7 @@
     </div>
 
     <script>
+        // VARIABLES GLOBALES
         let suppliers = [];
         let activityLog = [];
         let currentSort = { field: null, ascending: true };
@@ -1437,15 +1758,69 @@
         };
 
         // INITIALIZE
-        window.addEventListener('load', () => {
+        document.addEventListener('DOMContentLoaded', () => {
             loadData();
             renderSuppliers();
             updateStats();
             updateCharts();
             updateActivityFeed();
+            initializeEventListeners();
         });
 
-        document.getElementById('globalSearch').addEventListener('input', (e) => {
+        // EVENT LISTENERS
+        function initializeEventListeners() {
+            // Búsqueda global
+            document.getElementById('globalSearch').addEventListener('input', handleGlobalSearch);
+
+            // Botones principales
+            document.getElementById('openAddModal').addEventListener('click', openAddModal);
+            document.getElementById('closeModal').addEventListener('click', closeModal);
+            document.getElementById('cancelModal').addEventListener('click', closeModal);
+            document.getElementById('closeDetailModal').addEventListener('click', closeDetailModal);
+            document.getElementById('closeDetailBtn').addEventListener('click', closeDetailModal);
+
+            // Formulario
+            document.getElementById('supplierForm').addEventListener('submit', saveSupplier);
+
+            // Controles del panel
+            document.getElementById('refreshData').addEventListener('click', refreshData);
+            document.getElementById('toggleFilters').addEventListener('click', toggleFilters);
+
+            // Filtros
+            document.getElementById('filterCategory').addEventListener('change', renderSuppliers);
+            document.getElementById('filterStatus').addEventListener('change', renderSuppliers);
+            document.getElementById('filterRating').addEventListener('change', renderSuppliers);
+
+            // Navegación
+            document.querySelectorAll('.nav-item[data-section]').forEach(item => {
+                item.addEventListener('click', () => showSection(item.dataset.section));
+            });
+
+            // Exportar / Limpiar
+            document.getElementById('exportCSV').addEventListener('click', exportToCSV);
+            document.getElementById('exportJSON').addEventListener('click', exportToJSON);
+            document.getElementById('clearData').addEventListener('click', clearAllData);
+            document.getElementById('reportExportCSV').addEventListener('click', exportToCSV);
+            document.getElementById('reportExportJSON').addEventListener('click', exportToJSON);
+
+            // FAB
+            document.getElementById('fabButton').addEventListener('click', toggleAutoGenerate);
+
+            // Ordenamiento de tabla
+            document.querySelectorAll('th[data-sort]').forEach(th => {
+                th.addEventListener('click', () => sortTable(th.dataset.sort));
+            });
+
+            // Cerrar modal al hacer clic fuera
+            window.addEventListener('click', (e) => {
+                if (e.target.classList.contains('modal')) {
+                    e.target.classList.remove('show');
+                }
+            });
+        }
+
+        // BÚSQUEDA GLOBAL
+        function handleGlobalSearch(e) {
             const search = e.target.value.toLowerCase();
             const filtered = suppliers.filter(s => 
                 s.name.toLowerCase().includes(search) ||
@@ -1454,7 +1829,7 @@
                 s.email.toLowerCase().includes(search)
             );
             renderFilteredSuppliers(filtered);
-        });
+        }
 
         // AUTO-GENERATE
         function toggleAutoGenerate() {
@@ -1543,15 +1918,15 @@
             document.getElementById('supplierId').value = '';
             document.getElementById('modalTitle').innerHTML = '➕ Agregar Nuevo Proveedor';
             document.getElementById('saveButtonText').textContent = 'Guardar';
-            document.getElementById('supplierModal').style.display = 'block';
+            document.getElementById('supplierModal').classList.add('show');
         }
 
         function closeModal() {
-            document.getElementById('supplierModal').style.display = 'none';
+            document.getElementById('supplierModal').classList.remove('show');
         }
 
         function closeDetailModal() {
-            document.getElementById('detailModal').style.display = 'none';
+            document.getElementById('detailModal').classList.remove('show');
         }
 
         // SAVE SUPPLIER
@@ -1603,13 +1978,13 @@
             document.getElementById('contact').value = supplier.contact;
             document.getElementById('email').value = supplier.email;
             document.getElementById('phone').value = supplier.phone;
-            document.getElementById('address').value = supplier.address;
+            document.getElementById('address').value = supplier.address || '';
             document.getElementById('status').value = supplier.status;
             document.getElementById('rating').value = supplier.rating;
 
             document.getElementById('modalTitle').innerHTML = '✏️ Editar Proveedor';
             document.getElementById('saveButtonText').textContent = 'Actualizar';
-            document.getElementById('supplierModal').style.display = 'block';
+            document.getElementById('supplierModal').classList.add('show');
         }
 
         // DELETE SUPPLIER
@@ -1700,12 +2075,11 @@
                 </div>
             `;
 
-            document.getElementById('detailModal').style.display = 'block';
+            document.getElementById('detailModal').classList.add('show');
         }
 
         // RENDER SUPPLIERS
         function renderSuppliers() {
-            const tbody = document.getElementById('supplierTableBody');
             const categoryFilter = document.getElementById('filterCategory').value;
             const statusFilter = document.getElementById('filterStatus').value;
             const ratingFilter = document.getElementById('filterRating').value;
@@ -1718,6 +2092,7 @@
             });
 
             renderFilteredSuppliers(filtered);
+            renderSuppliersListSection(filtered);
         }
 
         function renderFilteredSuppliers(filtered) {
@@ -1731,6 +2106,47 @@
                                 <div class="empty-icon">🔍</div>
                                 <div class="empty-title">No se encontraron resultados</div>
                                 <div class="empty-text">Intenta ajustar los filtros de búsqueda</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(s => `
+                <tr>
+                    <td>
+                        <div class="supplier-name">${s.name}</div>
+                        <div class="supplier-ruc">RUC: ${s.ruc}</div>
+                    </td>
+                    <td><strong>${s.category}</strong></td>
+                    <td>
+                        <div>${s.contact}</div>
+                        <div style="font-size: 12px; color: #94a3b8;">${s.email}</div>
+                    </td>
+                    <td><span class="badge ${s.status}">${s.status.toUpperCase()}</span></td>
+                    <td><span class="rating-stars">${'⭐'.repeat(s.rating)}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-table btn-view" onclick="viewSupplier('${s.id}')" title="Ver detalles">👁️</button>
+                            <button class="btn-table btn-edit" onclick="editSupplier('${s.id}')" title="Editar">✏️</button>
+                            <button class="btn-table btn-delete" onclick="deleteSupplier('${s.id}')" title="Eliminar">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderSuppliersListSection(filtered) {
+            const tbody = document.getElementById('suppliersListBody');
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-icon">📦</div>
+                                <div class="empty-text">No hay proveedores</div>
                             </div>
                         </td>
                     </tr>
@@ -1808,6 +2224,7 @@
             updateCategoryChart();
             updateStatusChart();
             updateTopSuppliers();
+            updateAnalyticsCharts();
         }
 
         function updateCategoryChart() {
@@ -1948,6 +2365,508 @@
             `).join('');
         }
 
+        function updateAnalyticsCharts() {
+            updateAnalyticsCategoryChart();
+            updateAnalyticsStatusChart();
+            updateAnalyticsStats();
+            updateRatingsChart();
+            updateMonthlyChart();
+            updateCategorySummaryTable();
+            updatePerformanceMetrics();
+            updateInsights();
+            updateComparisonTable();
+        }
+
+        function updateAnalyticsCategoryChart() {
+            const categoryCount = {};
+            sampleData.categories.forEach(cat => {
+                categoryCount[cat] = suppliers.filter(s => s.category === cat).length;
+            });
+
+            const maxCount = Math.max(...Object.values(categoryCount), 1);
+            const chartContainer = document.getElementById('analyticsChart');
+
+            if (suppliers.length === 0) {
+                chartContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📊</div>
+                        <div class="empty-text">No hay datos para mostrar</div>
+                    </div>
+                `;
+            } else {
+                chartContainer.innerHTML = Object.entries(categoryCount)
+                    .filter(([_, count]) => count > 0)
+                    .map(([category, count]) => {
+                        const height = (count / maxCount) * 100;
+                        const shortName = category.length > 12 ? category.substring(0, 10) + '...' : category;
+                        return `
+                            <div class="bar-item" title="${category}: ${count} proveedores">
+                                <div class="bar" style="height: ${height}%">
+                                    <div class="bar-value">${count}</div>
+                                </div>
+                                <div class="bar-label">${shortName}</div>
+                            </div>
+                        `;
+                    }).join('');
+            }
+        }
+
+        function updateAnalyticsStatusChart() {
+            const statusCount = {
+                activo: suppliers.filter(s => s.status === 'activo').length,
+                pendiente: suppliers.filter(s => s.status === 'pendiente').length,
+                inactivo: suppliers.filter(s => s.status === 'inactivo').length
+            };
+
+            const total = suppliers.length || 1;
+            const canvas = document.getElementById('analyticsStatusChart');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = 220;
+            canvas.height = 220;
+
+            const colors = {
+                activo: '#10b981',
+                pendiente: '#f59e0b',
+                inactivo: '#ef4444'
+            };
+
+            const labels = {
+                activo: 'Activo',
+                pendiente: 'Pendiente',
+                inactivo: 'Inactivo'
+            };
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (suppliers.length === 0) {
+                ctx.fillStyle = '#e2e8f0';
+                ctx.beginPath();
+                ctx.arc(110, 110, 90, 0, 2 * Math.PI);
+                ctx.fill();
+            } else {
+                let currentAngle = -0.5 * Math.PI;
+                const centerX = 110;
+                const centerY = 110;
+                const radius = 90;
+
+                Object.entries(statusCount).forEach(([status, count]) => {
+                    if (count > 0) {
+                        const sliceAngle = (count / total) * 2 * Math.PI;
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(centerX, centerY);
+                        ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+                        ctx.closePath();
+                        ctx.fillStyle = colors[status];
+                        ctx.fill();
+                        
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 3;
+                        ctx.stroke();
+
+                        currentAngle += sliceAngle;
+                    }
+                });
+            }
+
+            const legendContainer = document.getElementById('analyticsStatusLegend');
+            legendContainer.innerHTML = Object.entries(statusCount).map(([status, count]) => {
+                const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+                return `
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: ${colors[status]}"></div>
+                        <div class="legend-text">
+                            <div class="legend-label">${labels[status]}</div>
+                            <div class="legend-value">${count} (${percentage}%)</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateAnalyticsStats() {
+            // Premium suppliers (5 stars)
+            const premium = suppliers.filter(s => s.rating === 5).length;
+            document.getElementById('premiumSuppliers').textContent = premium;
+
+            // Top category
+            const categoryCount = {};
+            suppliers.forEach(s => {
+                categoryCount[s.category] = (categoryCount[s.category] || 0) + 1;
+            });
+            const topCat = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0];
+            if (topCat) {
+                document.getElementById('topCategory').textContent = topCat[0];
+                document.getElementById('topCategoryCount').textContent = `${topCat[1]} proveedores`;
+            } else {
+                document.getElementById('topCategory').textContent = '-';
+                document.getElementById('topCategoryCount').textContent = '0 proveedores';
+            }
+
+            // Activity rate
+            const activeRate = suppliers.length > 0 
+                ? ((suppliers.filter(s => s.status === 'activo').length / suppliers.length) * 100).toFixed(1)
+                : 0;
+            document.getElementById('activityRate').textContent = `${activeRate}%`;
+
+            // New this month
+            const now = new Date();
+            const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+            const newThisMonth = suppliers.filter(s => new Date(s.createdAt) >= oneMonthAgo).length;
+            document.getElementById('newThisMonth').textContent = newThisMonth;
+        }
+
+        function updateRatingsChart() {
+            const ratingsCount = {
+                '5⭐': suppliers.filter(s => s.rating === 5).length,
+                '4⭐': suppliers.filter(s => s.rating === 4).length,
+                '3⭐': suppliers.filter(s => s.rating === 3).length,
+                '2⭐': suppliers.filter(s => s.rating === 2).length,
+                '1⭐': suppliers.filter(s => s.rating === 1).length
+            };
+
+            const maxCount = Math.max(...Object.values(ratingsCount), 1);
+            const chartContainer = document.getElementById('ratingsChart');
+
+            if (suppliers.length === 0) {
+                chartContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">⭐</div>
+                        <div class="empty-text">No hay calificaciones</div>
+                    </div>
+                `;
+                return;
+            }
+
+            chartContainer.innerHTML = Object.entries(ratingsCount)
+                .map(([rating, count]) => {
+                    const height = (count / maxCount) * 100;
+                    return `
+                        <div class="bar-item" title="${rating}: ${count} proveedores">
+                            <div class="bar" style="height: ${height}%; background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);">
+                                <div class="bar-value">${count}</div>
+                            </div>
+                            <div class="bar-label">${rating}</div>
+                        </div>
+                    `;
+                }).join('');
+        }
+
+        function updateMonthlyChart() {
+            const monthlyCount = {};
+            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            
+            // Get last 6 months
+            const now = new Date();
+            for (let i = 5; i >= 0; i--) {
+                const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const monthKey = `${months[date.getMonth()]} ${date.getFullYear()}`;
+                monthlyCount[monthKey] = 0;
+            }
+
+            // Count suppliers by month
+            suppliers.forEach(s => {
+                const date = new Date(s.createdAt);
+                const monthKey = `${months[date.getMonth()]} ${date.getFullYear()}`;
+                if (monthlyCount.hasOwnProperty(monthKey)) {
+                    monthlyCount[monthKey]++;
+                }
+            });
+
+            const maxCount = Math.max(...Object.values(monthlyCount), 1);
+            const chartContainer = document.getElementById('monthlyChart');
+
+            if (suppliers.length === 0) {
+                chartContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📅</div>
+                        <div class="empty-text">No hay datos mensuales</div>
+                    </div>
+                `;
+                return;
+            }
+
+            chartContainer.innerHTML = Object.entries(monthlyCount)
+                .map(([month, count]) => {
+                    const height = (count / maxCount) * 100;
+                    return `
+                        <div class="bar-item" title="${month}: ${count} proveedores">
+                            <div class="bar" style="height: ${height}%; background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);">
+                                <div class="bar-value">${count}</div>
+                            </div>
+                            <div class="bar-label">${month.split(' ')[0]}</div>
+                        </div>
+                    `;
+                }).join('');
+        }
+
+        function updateCategorySummaryTable() {
+            const tbody = document.getElementById('categorySummaryTable');
+            const total = suppliers.length;
+
+            if (total === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-icon">📊</div>
+                                <div class="empty-text">No hay datos para analizar</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const categoryData = {};
+            sampleData.categories.forEach(cat => {
+                const catSuppliers = suppliers.filter(s => s.category === cat);
+                if (catSuppliers.length > 0) {
+                    categoryData[cat] = {
+                        total: catSuppliers.length,
+                        active: catSuppliers.filter(s => s.status === 'activo').length,
+                        inactive: catSuppliers.filter(s => s.status === 'inactivo').length,
+                        pending: catSuppliers.filter(s => s.status === 'pendiente').length,
+                        avgRating: (catSuppliers.reduce((sum, s) => sum + s.rating, 0) / catSuppliers.length).toFixed(1),
+                        percentage: ((catSuppliers.length / total) * 100).toFixed(1)
+                    };
+                }
+            });
+
+            tbody.innerHTML = Object.entries(categoryData)
+                .sort((a, b) => b[1].total - a[1].total)
+                .map(([category, data]) => `
+                    <tr>
+                        <td><strong>${category}</strong></td>
+                        <td><strong>${data.total}</strong></td>
+                        <td><span class="badge activo">${data.active}</span></td>
+                        <td><span class="badge inactivo">${data.inactive}</span></td>
+                        <td><span class="badge pendiente">${data.pending}</span></td>
+                        <td><span class="rating-stars">${'⭐'.repeat(Math.round(data.avgRating))}</span> ${data.avgRating}</td>
+                        <td><strong>${data.percentage}%</strong></td>
+                    </tr>
+                `).join('');
+        }
+
+        function updatePerformanceMetrics() {
+            const total = suppliers.length;
+            
+            if (total === 0) {
+                document.getElementById('complianceRate').textContent = '0%';
+                document.getElementById('complianceBar').style.width = '0%';
+                document.getElementById('qualityRate').textContent = '0%';
+                document.getElementById('qualityBar').style.width = '0%';
+                document.getElementById('diversityRate').textContent = '0%';
+                document.getElementById('diversityBar').style.width = '0%';
+                document.getElementById('retentionRate').textContent = '0%';
+                document.getElementById('retentionBar').style.width = '0%';
+                return;
+            }
+
+            // Compliance rate (activos / total)
+            const compliance = ((suppliers.filter(s => s.status === 'activo').length / total) * 100).toFixed(1);
+            document.getElementById('complianceRate').textContent = `${compliance}%`;
+            setTimeout(() => {
+                document.getElementById('complianceBar').style.width = `${compliance}%`;
+            }, 100);
+
+            // Quality rate (4-5 stars)
+            const quality = ((suppliers.filter(s => s.rating >= 4).length / total) * 100).toFixed(1);
+            document.getElementById('qualityRate').textContent = `${quality}%`;
+            setTimeout(() => {
+                document.getElementById('qualityBar').style.width = `${quality}%`;
+            }, 200);
+
+            // Diversity rate (categories used / total categories)
+            const usedCategories = new Set(suppliers.map(s => s.category)).size;
+            const diversity = ((usedCategories / sampleData.categories.length) * 100).toFixed(1);
+            document.getElementById('diversityRate').textContent = `${diversity}%`;
+            setTimeout(() => {
+                document.getElementById('diversityBar').style.width = `${diversity}%`;
+            }, 300);
+
+            // Retention rate (no inactivos)
+            const retention = ((suppliers.filter(s => s.status !== 'inactivo').length / total) * 100).toFixed(1);
+            document.getElementById('retentionRate').textContent = `${retention}%`;
+            setTimeout(() => {
+                document.getElementById('retentionBar').style.width = `${retention}%`;
+            }, 400);
+        }
+
+        function updateInsights() {
+            const container = document.getElementById('insightsContainer');
+            const total = suppliers.length;
+
+            if (total === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">💡</div>
+                        <div class="empty-text">Agrega proveedores para ver insights</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const insights = [];
+
+            // Insight 1: Best category
+            const categoryCount = {};
+            suppliers.forEach(s => {
+                categoryCount[s.category] = (categoryCount[s.category] || 0) + 1;
+            });
+            const topCat = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0];
+            if (topCat) {
+                insights.push({
+                    icon: '🏆',
+                    title: 'Categoría Dominante',
+                    text: `${topCat[0]} representa el ${((topCat[1] / total) * 100).toFixed(1)}% de tus proveedores`
+                });
+            }
+
+            // Insight 2: Quality average
+            const avgRating = (suppliers.reduce((sum, s) => sum + s.rating, 0) / total).toFixed(1);
+            if (avgRating >= 4) {
+                insights.push({
+                    icon: '⭐',
+                    title: 'Excelente Calidad',
+                    text: `Tu calificación promedio es ${avgRating}/5 - ¡Muy por encima del estándar!`
+                });
+            } else if (avgRating < 3) {
+                insights.push({
+                    icon: '⚠️',
+                    title: 'Oportunidad de Mejora',
+                    text: `Calificación promedio de ${avgRating}/5 - Considera revisar proveedores de bajo rendimiento`
+                });
+            }
+
+            // Insight 3: Pending suppliers
+            const pending = suppliers.filter(s => s.status === 'pendiente').length;
+            if (pending > 0) {
+                insights.push({
+                    icon: '⏳',
+                    title: 'Proveedores Pendientes',
+                    text: `Tienes ${pending} proveedor${pending > 1 ? 'es' : ''} pendiente${pending > 1 ? 's' : ''} de revisión`
+                });
+            }
+
+            // Insight 4: Recent growth
+            const now = new Date();
+            const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+            const recent = suppliers.filter(s => new Date(s.createdAt) >= oneMonthAgo).length;
+            if (recent > 0) {
+                insights.push({
+                    icon: '📈',
+                    title: 'Crecimiento Reciente',
+                    text: `Has agregado ${recent} proveedor${recent > 1 ? 'es' : ''} en el último mes`
+                });
+            }
+
+            // Insight 5: Inactive warning
+            const inactive = suppliers.filter(s => s.status === 'inactivo').length;
+            if (inactive > total * 0.2) {
+                insights.push({
+                    icon: '🔴',
+                    title: 'Alerta de Inactividad',
+                    text: `${((inactive / total) * 100).toFixed(1)}% de proveedores están inactivos - considera actualizarlos o eliminarlos`
+                });
+            }
+
+            container.innerHTML = insights.map(insight => `
+                <div class="activity-item" style="margin-bottom: 15px;">
+                    <div class="activity-icon">${insight.icon}</div>
+                    <div class="activity-content">
+                        <div class="activity-text">${insight.title}</div>
+                        <div class="activity-time">${insight.text}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateComparisonTable() {
+            const tbody = document.getElementById('comparisonTable');
+            const total = suppliers.length;
+
+            if (total === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <div class="empty-icon">📊</div>
+                                <div class="empty-text">No hay métricas para comparar</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const metrics = [
+                {
+                    name: 'Proveedores Activos',
+                    current: suppliers.filter(s => s.status === 'activo').length,
+                    target: Math.ceil(total * 0.8),
+                    format: 'number'
+                },
+                {
+                    name: 'Calificación Promedio',
+                    current: parseFloat((suppliers.reduce((sum, s) => sum + s.rating, 0) / total).toFixed(1)),
+                    target: 4.0,
+                    format: 'rating'
+                },
+                {
+                    name: 'Proveedores Premium (5⭐)',
+                    current: suppliers.filter(s => s.rating === 5).length,
+                    target: Math.ceil(total * 0.3),
+                    format: 'number'
+                },
+                {
+                    name: 'Diversificación',
+                    current: new Set(suppliers.map(s => s.category)).size,
+                    target: sampleData.categories.length,
+                    format: 'number'
+                },
+                {
+                    name: 'Tasa de Retención',
+                    current: parseFloat(((suppliers.filter(s => s.status !== 'inactivo').length / total) * 100).toFixed(1)),
+                    target: 90,
+                    format: 'percentage'
+                }
+            ];
+
+            tbody.innerHTML = metrics.map(metric => {
+                const progress = Math.min((metric.current / metric.target) * 100, 100);
+                const status = progress >= 100 ? '✅ Cumplido' : progress >= 75 ? '🟡 En progreso' : '🔴 Por debajo';
+                const statusColor = progress >= 100 ? 'var(--success)' : progress >= 75 ? 'var(--warning)' : 'var(--danger)';
+
+                let currentDisplay, targetDisplay;
+                if (metric.format === 'rating') {
+                    currentDisplay = `${metric.current} ⭐`;
+                    targetDisplay = `${metric.target} ⭐`;
+                } else if (metric.format === 'percentage') {
+                    currentDisplay = `${metric.current}%`;
+                    targetDisplay = `${metric.target}%`;
+                } else {
+                    currentDisplay = metric.current;
+                    targetDisplay = metric.target;
+                }
+
+                return `
+                    <tr>
+                        <td><strong>${metric.name}</strong></td>
+                        <td><strong>${currentDisplay}</strong></td>
+                        <td>${targetDisplay}</td>
+                        <td><span style="color: ${statusColor}; font-weight: 600;">${status}</span></td>
+                        <td>
+                            <div style="background: var(--light); height: 8px; border-radius: 10px; overflow: hidden; width: 100px;">
+                                <div style="background: ${statusColor}; height: 100%; width: ${progress}%; transition: width 0.5s ease;"></div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
         // ACTIVITY FEED
         function addActivity(icon, text) {
             activityLog.unshift({
@@ -2012,7 +2931,7 @@
             const headers = ['Nombre', 'RUC', 'Categoría', 'Contacto', 'Email', 'Teléfono', 'Dirección', 'Estado', 'Calificación'];
             const rows = suppliers.map(s => [
                 s.name, s.ruc, s.category, s.contact, s.email, s.phone, 
-                s.address, s.status, s.rating
+                s.address || '', s.status, s.rating
             ]);
 
             let csvContent = headers.join(',') + '\n';
@@ -2068,7 +2987,7 @@
         // UTILITY FUNCTIONS
         function toggleFilters() {
             const panel = document.getElementById('filtersPanel');
-            panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+            panel.classList.toggle('show');
         }
 
         function refreshData() {
@@ -2080,10 +2999,17 @@
         }
 
         function showSection(section) {
+            // Actualizar navegación
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
             });
             event.target.closest('.nav-item').classList.add('active');
+
+            // Mostrar sección
+            document.querySelectorAll('.content-section').forEach(sec => {
+                sec.classList.remove('active');
+            });
+            document.getElementById(`${section}-section`).classList.add('active');
         }
 
         function showNotification(title, message, type) {
@@ -2113,7 +3039,11 @@
 
         function saveData() {
             const data = { suppliers, activityLog };
-            localStorage.setItem('supplierDashboardData', JSON.stringify(data));
+            try {
+                localStorage.setItem('supplierDashboardData', JSON.stringify(data));
+            } catch (e) {
+                console.error('Error saving data:', e);
+            }
         }
 
         function loadData() {
@@ -2126,13 +3056,8 @@
                 }
             } catch (e) {
                 console.error('Error loading data:', e);
-            }
-        }
-
-        // CLOSE MODALS ON OUTSIDE CLICK
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
+                suppliers = [];
+                activityLog = [];
             }
         }
     </script>
